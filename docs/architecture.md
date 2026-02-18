@@ -20,7 +20,7 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 - Produces auditable verification decisions.
 
 3. RC Conflict Lane (`src/ree_openclaw/rc`)
-- Computes posture transitions via hysteresis (`NORMAL` -> `VERIFY` -> `LOCKDOWN`).
+- Computes RC score via weighted structured signals, then applies hysteresis transitions (`NORMAL` -> `VERIFY` -> `LOCKDOWN`).
 - Modulates verifier strictness and gate posture.
 
 4. Commitment (`src/ree_openclaw/commit`)
@@ -59,7 +59,8 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 
 4. M3 RC Conflict Hysteresis
 - State transitions with high/low/lock thresholds implemented.
-- Runtime updates RC posture before verifier decision.
+- Weighted RC signal scoring implemented.
+- Runtime computes RC score and updates posture before verifier decision.
 
 5. M4 Rollout Interface
 - `TRAJ` typing and pre-commit separation are partially implemented.

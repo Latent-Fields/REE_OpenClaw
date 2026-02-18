@@ -48,11 +48,12 @@ Status: Implemented
 
 Implemented:
 - Hysteresis thresholds and transitions exist (`src/ree_openclaw/rc/hysteresis.py`).
+- Weighted RC scoring from structured signals exists (`src/ree_openclaw/rc/scoring.py`).
 - RC posture is applied by verifier strictness and LOCKDOWN behavior.
-- Integrated runtime updates RC state before verifier decision.
+- Integrated runtime computes RC score from structured signals and updates RC state before verifier decision.
 
 Gaps:
-- `RC_conflict_score` computation pipeline from heterogeneous signals is still caller-supplied.
+- No remaining M3 gap for v0 prototype scope.
 
 ## M4 - Rollout Interface Separation
 

@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ree_openclaw.rc.scoring import RCConflictSignals
 from ree_openclaw.runtime import OpenClawRuntime
 from ree_openclaw.types import EffectClass
 from ree_openclaw.verifier.verifier import ConsentToken
@@ -56,6 +57,12 @@ def _run_cycle(args: argparse.Namespace) -> int:
     runtime = _build_runtime(args.manifest.resolve(), state_dir)
     effect_class = EffectClass(args.effect_class)
     consent_token = _maybe_consent(args.consent, args.action_class, args.scope)
+    rc_signals = RCConflictSignals(
+        provenance_mismatch=args.rc_signal_provenance_mismatch,
+        identity_capability_inconsistency=args.rc_signal_identity_inconsistency,
+        temporal_discontinuity=args.rc_signal_temporal_discontinuity,
+        tool_output_inconsistency=args.rc_signal_tool_output_inconsistency,
+    )
     cycle = runtime.run_command_cycle(
         user_text=args.user_text,
         proposal_text=args.proposal_text,
@@ -64,6 +71,7 @@ def _run_cycle(args: argparse.Namespace) -> int:
         effect_class=effect_class,
         command=args.command,
         rc_conflict_score=args.rc_score,
+        rc_signals=rc_signals,
         llm_role=args.llm_role,
         model_call_id=args.model_call_id,
         prompt_hash=args.prompt_hash,
@@ -75,6 +83,7 @@ def _run_cycle(args: argparse.Namespace) -> int:
         "allowed": cycle.verification.allowed,
         "reason": cycle.verification.reason,
         "strict_mode": cycle.verification.strict_mode,
+        "rc_conflict_score": cycle.rc_conflict_score,
         "rc_state": cycle.rc_state.value,
         "commit_id": cycle.commit_token.commit_id if cycle.commit_token else None,
         "execution_returncode": (
@@ -99,7 +108,12 @@ def _run_demo(args: argparse.Namespace) -> int:
         scope="workspace:project",
         effect_class=EffectClass.REVERSIBLE,
         command=("echo", "ree_openclaw_demo_ok"),
-        rc_conflict_score=0.2,
+        rc_signals=RCConflictSignals(
+            provenance_mismatch=0.1,
+            identity_capability_inconsistency=0.05,
+            temporal_discontinuity=0.0,
+            tool_output_inconsistency=0.0,
+        ),
         llm_role="rollout",
         model_call_id="demo-model-call",
         prompt_hash="demo-prompt-hash",
@@ -109,6 +123,7 @@ def _run_demo(args: argparse.Namespace) -> int:
     response = {
         "allowed": cycle.verification.allowed,
         "reason": cycle.verification.reason,
+        "rc_conflict_score": cycle.rc_conflict_score,
         "rc_state": cycle.rc_state.value,
         "commit_id": cycle.commit_token.commit_id if cycle.commit_token else None,
         "execution_stdout": cycle.execution_result.stdout if cycle.execution_result else None,
@@ -152,7 +167,16 @@ def build_parser() -> argparse.ArgumentParser:
         choices=[effect.value for effect in EffectClass],
         default=EffectClass.REVERSIBLE.value,
     )
-    run_cycle.add_argument("--rc-score", type=float, default=0.2)
+    run_cycle.add_argument(
+        "--rc-score",
+        type=float,
+        default=None,
+        help="Optional direct RC score override (0-1). If omitted, score is computed from RC signals.",
+    )
+    run_cycle.add_argument("--rc-signal-provenance-mismatch", type=float, default=0.0)
+    run_cycle.add_argument("--rc-signal-identity-inconsistency", type=float, default=0.0)
+    run_cycle.add_argument("--rc-signal-temporal-discontinuity", type=float, default=0.0)
+    run_cycle.add_argument("--rc-signal-tool-output-inconsistency", type=float, default=0.0)
     run_cycle.add_argument("--llm-role", default="rollout")
     run_cycle.add_argument("--model-call-id", default="cli-model-call")
     run_cycle.add_argument("--prompt-hash", default="cli-prompt-hash")

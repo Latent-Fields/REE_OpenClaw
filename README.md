@@ -21,7 +21,7 @@ make run-demo
 `make run-demo` runs a safe local prototype cycle:
 
 1. Proposal is routed through typed boundary.
-2. RC hysteresis updates posture.
+2. RC score is computed from structured conflict signals, then hysteresis updates posture.
 3. Verifier decides action eligibility.
 4. Commit token is minted if allowed.
 5. Action executes inside the local sandbox harness.
@@ -33,6 +33,16 @@ Run one full configurable cycle:
 
 ```bash
 python3 -m ree_openclaw.cli run-cycle --command echo "hello from cycle"
+```
+
+Pass explicit RC signals (computed into one score):
+
+```bash
+python3 -m ree_openclaw.cli run-cycle \
+  --rc-signal-provenance-mismatch 0.7 \
+  --rc-signal-identity-inconsistency 0.4 \
+  --rc-signal-temporal-discontinuity 0.2 \
+  --rc-signal-tool-output-inconsistency 0.1
 ```
 
 Run the built-in safe demo:

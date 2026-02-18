@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -8,6 +8,7 @@ from ree_openclaw.adapter.routing import TypedBoundaryRouter
 from ree_openclaw.commit.token import CommitToken, mint_commit_token
 from ree_openclaw.ledger.append_only import AppendOnlyLedger
 from ree_openclaw.rc.hysteresis import RCHysteresis, RCHysteresisConfig, RCState
+from ree_openclaw.rc.scoring import RCConflictScorer, RCConflictSignals
 from ree_openclaw.sandbox.harness import SandboxPolicy, SandboxResult, SandboxedExecutor
 from ree_openclaw.types import EffectClass, Envelope
 from ree_openclaw.verifier.capability_manifest import load_capabilities
@@ -27,7 +28,8 @@ class ProposalCycleInput:
     scope: str
     effect_class: EffectClass
     command: tuple[str, ...]
-    rc_conflict_score: float = 0.0
+    rc_conflict_score: float | None = None
+    rc_signals: RCConflictSignals = field(default_factory=RCConflictSignals)
     llm_role: str = "rollout"
     model_call_id: str = "local-model-call"
     prompt_hash: str = "local-prompt-hash"
@@ -40,6 +42,7 @@ class ProposalCycleInput:
 class ProposalCycleResult:
     user_envelope: Envelope
     proposal_envelope: Envelope
+    rc_conflict_score: float
     rc_state: RCState
     verification: VerificationDecision
     commit_token: CommitToken | None
@@ -62,11 +65,13 @@ class OpenClawRuntime:
         ledger_path: Path,
         sandbox_root: Path,
         rc_config: RCHysteresisConfig | None = None,
+        rc_scorer: RCConflictScorer | None = None,
         sandbox_policy: SandboxPolicy | None = None,
         audit_log_path: Path | None = None,
     ) -> None:
         self.router = TypedBoundaryRouter()
         self.rc_lane = RCHysteresis(rc_config)
+        self.rc_scorer = rc_scorer or RCConflictScorer()
         self.verifier = CapabilityVerifier(capabilities, audit_log_path=audit_log_path)
         self.ledger = AppendOnlyLedger(ledger_path)
         self.executor = SandboxedExecutor(sandbox_root, policy=sandbox_policy)
@@ -79,6 +84,7 @@ class OpenClawRuntime:
         ledger_path: Path,
         sandbox_root: Path,
         rc_config: RCHysteresisConfig | None = None,
+        rc_scorer: RCConflictScorer | None = None,
         sandbox_policy: SandboxPolicy | None = None,
         audit_log_path: Path | None = None,
     ) -> OpenClawRuntime:
@@ -88,6 +94,7 @@ class OpenClawRuntime:
             ledger_path=ledger_path,
             sandbox_root=sandbox_root,
             rc_config=rc_config,
+            rc_scorer=rc_scorer,
             sandbox_policy=sandbox_policy,
             audit_log_path=audit_log_path,
         )
@@ -106,14 +113,18 @@ class OpenClawRuntime:
             proposed_effect_class=proposal.effect_class,
         )
 
-        rc_state = self.rc_lane.update(proposal.rc_conflict_score)
+        rc_conflict_score = proposal.rc_conflict_score
+        if rc_conflict_score is None:
+            rc_conflict_score = self.rc_scorer.score(proposal.rc_signals)
+
+        rc_state = self.rc_lane.update(rc_conflict_score)
         verification = self.verifier.verify(
             VerificationRequest(
                 action_class=proposal.action_class,
                 scope=proposal.scope,
                 effect_class=proposal.effect_class,
                 rc_state=rc_state,
-                rc_conflict_score=proposal.rc_conflict_score,
+                rc_conflict_score=rc_conflict_score,
                 consent_token=proposal.consent_token,
                 provenance={
                     "source_class": proposal_envelope.provenance.source_class,
@@ -135,6 +146,7 @@ class OpenClawRuntime:
                     "scope": proposal.scope,
                     "effect_class": proposal.effect_class.value,
                     "rc_state": rc_state.value,
+                    "rc_conflict_score": rc_conflict_score,
                     "reason": verification.reason,
                     "proposal_type": proposal_envelope.payload_type.value,
                 }
@@ -142,6 +154,7 @@ class OpenClawRuntime:
             return ProposalCycleResult(
                 user_envelope=user_envelope,
                 proposal_envelope=proposal_envelope,
+                rc_conflict_score=rc_conflict_score,
                 rc_state=rc_state,
                 verification=verification,
                 commit_token=None,
@@ -155,7 +168,7 @@ class OpenClawRuntime:
             trajectory_reference=proposal.trajectory_reference,
             verifier_state=verifier_state,
             rc_state=rc_state.value,
-            precision_snapshot={"rc_conflict_score": proposal.rc_conflict_score},
+            precision_snapshot={"rc_conflict_score": rc_conflict_score},
         )
         execution_result = self.executor.run(proposal.command)
         ledger_entry = self.ledger.append(
@@ -166,6 +179,7 @@ class OpenClawRuntime:
                 "scope": proposal.scope,
                 "effect_class": proposal.effect_class.value,
                 "rc_state": rc_state.value,
+                "rc_conflict_score": rc_conflict_score,
                 "verifier_state": verifier_state,
                 "command": list(proposal.command),
                 "execution": {
@@ -178,6 +192,7 @@ class OpenClawRuntime:
         return ProposalCycleResult(
             user_envelope=user_envelope,
             proposal_envelope=proposal_envelope,
+            rc_conflict_score=rc_conflict_score,
             rc_state=rc_state,
             verification=verification,
             commit_token=commit_token,
@@ -194,7 +209,8 @@ class OpenClawRuntime:
         scope: str,
         effect_class: EffectClass,
         command: Sequence[str],
-        rc_conflict_score: float = 0.0,
+        rc_conflict_score: float | None = None,
+        rc_signals: RCConflictSignals | None = None,
         llm_role: str = "rollout",
         model_call_id: str = "local-model-call",
         prompt_hash: str = "local-prompt-hash",
@@ -211,6 +227,7 @@ class OpenClawRuntime:
                 effect_class=effect_class,
                 command=tuple(command),
                 rc_conflict_score=rc_conflict_score,
+                rc_signals=rc_signals or RCConflictSignals(),
                 llm_role=llm_role,
                 model_call_id=model_call_id,
                 prompt_hash=prompt_hash,

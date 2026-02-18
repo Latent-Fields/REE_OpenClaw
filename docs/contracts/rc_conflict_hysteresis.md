@@ -2,7 +2,7 @@
 
 Doc: `docs/contracts/rc_conflict_hysteresis.md`  
 Date: 2026-02-18  
-Status: Draft (v0)
+Status: Active (v0 prototype)
 
 ## Purpose
 
@@ -16,6 +16,17 @@ Specify how RC conflict is computed and how state transitions avoid threshold os
 - identity or capability contradictions
 - temporal discontinuity
 - tool output inconsistency with declared effects
+
+Default v0 weighted scoring (`src/ree_openclaw/rc/scoring.py`):
+
+- provenance mismatch: `0.35`
+- identity/capability inconsistency: `0.30`
+- temporal discontinuity: `0.20`
+- tool output inconsistency: `0.15`
+
+Score equation:
+
+`RC_conflict_score = sum(weight_i * signal_i) / sum(weight_i)`
 
 ## States
 
@@ -49,4 +60,3 @@ Constraint: `T_low < T_high < T_lock`
 - Spoof attempt should push score over `T_high`.
 - Repeated borderline signals should not cause fast mode flapping.
 - Recovery requires sustained drop below `T_low`.
-

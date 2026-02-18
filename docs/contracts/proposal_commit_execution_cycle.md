@@ -16,7 +16,7 @@ Define the required runtime order for action release in `REE_OpenClaw`.
 - No user/LLM direct writes to `POL`/`ID`/`CAPS`.
 
 2. RC hysteresis update
-- Runtime receives `rc_conflict_score` in `[0,1]`.
+- Runtime computes `rc_conflict_score` from structured RC signals (or accepts explicit override) in `[0,1]`.
 - RC lane updates posture (`NORMAL`, `VERIFY`, `LOCKDOWN`) before verification.
 
 3. Verifier decision
