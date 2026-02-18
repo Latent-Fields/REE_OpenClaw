@@ -1,0 +1,72 @@
+{
+  "capabilities": [
+    {
+      "action_class": "READ_FILE",
+      "effect_class": "none",
+      "requires_consent": false,
+      "allowed_scopes": [
+        "workspace:readonly"
+      ],
+      "required_verifiers": [
+        "scope_verifier"
+      ],
+      "provenance_bindings": [
+        "model_call_id",
+        "prompt_hash",
+        "input_provenance"
+      ]
+    },
+    {
+      "action_class": "WRITE_FILE",
+      "effect_class": "reversible",
+      "requires_consent": false,
+      "allowed_scopes": [
+        "workspace:project"
+      ],
+      "required_verifiers": [
+        "scope_verifier"
+      ],
+      "provenance_bindings": [
+        "model_call_id",
+        "prompt_hash",
+        "input_provenance"
+      ]
+    },
+    {
+      "action_class": "SEND_EMAIL",
+      "effect_class": "privileged",
+      "requires_consent": true,
+      "allowed_scopes": [
+        "mailbox:primary"
+      ],
+      "required_verifiers": [
+        "scope_verifier",
+        "consent_verifier"
+      ],
+      "provenance_bindings": [
+        "model_call_id",
+        "prompt_hash",
+        "input_provenance"
+      ]
+    },
+    {
+      "action_class": "DELETE_FILE",
+      "effect_class": "destructive",
+      "requires_consent": true,
+      "allowed_scopes": [
+        "workspace:sandbox"
+      ],
+      "required_verifiers": [
+        "scope_verifier",
+        "consent_verifier",
+        "destructive_action_verifier"
+      ],
+      "provenance_bindings": [
+        "model_call_id",
+        "prompt_hash",
+        "input_provenance"
+      ]
+    }
+  ]
+}
+

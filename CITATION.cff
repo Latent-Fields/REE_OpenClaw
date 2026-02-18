@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: "REE_OpenClaw"
+message: "If you use this project, please cite it using this metadata."
+type: software
+authors:
+  - family-names: Golden
+    given-names: Daniel
+repository-code: "https://github.com/Latent-Fields/REE_OpenClaw"
+license: Apache-2.0
+version: 0.1.0
+date-released: 2026-02-18
+abstract: >
+  REE_OpenClaw is an implementation scaffold that applies REE typed authority,
+  commitment, and post-commit responsibility flow to an OpenClaw-class agent shell.
+

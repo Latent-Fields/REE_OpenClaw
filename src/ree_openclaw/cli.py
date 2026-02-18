@@ -1,0 +1,205 @@
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+
+from ree_openclaw.runtime import OpenClawRuntime
+from ree_openclaw.types import EffectClass
+from ree_openclaw.verifier.verifier import ConsentToken
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _default_manifest() -> Path:
+    return _repo_root() / "config" / "capabilities" / "default_manifest.json"
+
+
+def _runtime_paths(state_dir: Path) -> tuple[Path, Path, Path]:
+    return (
+        state_dir / "ledger.jsonl",
+        state_dir / "sandbox",
+        state_dir / "verifier_audit.jsonl",
+    )
+
+
+def _build_runtime(manifest: Path, state_dir: Path) -> OpenClawRuntime:
+    ledger_path, sandbox_root, audit_path = _runtime_paths(state_dir)
+    return OpenClawRuntime.from_manifest(
+        manifest_path=manifest,
+        ledger_path=ledger_path,
+        sandbox_root=sandbox_root,
+        audit_log_path=audit_path,
+    )
+
+
+def _maybe_consent(enabled: bool, action_class: str, scope: str) -> ConsentToken | None:
+    if not enabled:
+        return None
+    return ConsentToken(
+        action_class=action_class,
+        scope=scope,
+        nonce="cli-consent",
+        issued_at=datetime.now(tz=timezone.utc).isoformat(),
+    )
+
+
+def _print_result(result: dict[str, object]) -> None:
+    print(json.dumps(result, indent=2, sort_keys=True))
+
+
+def _run_cycle(args: argparse.Namespace) -> int:
+    state_dir = args.state_dir.resolve()
+    runtime = _build_runtime(args.manifest.resolve(), state_dir)
+    effect_class = EffectClass(args.effect_class)
+    consent_token = _maybe_consent(args.consent, args.action_class, args.scope)
+    cycle = runtime.run_command_cycle(
+        user_text=args.user_text,
+        proposal_text=args.proposal_text,
+        action_class=args.action_class,
+        scope=args.scope,
+        effect_class=effect_class,
+        command=args.command,
+        rc_conflict_score=args.rc_score,
+        llm_role=args.llm_role,
+        model_call_id=args.model_call_id,
+        prompt_hash=args.prompt_hash,
+        input_provenance=tuple(args.input_provenance),
+        trajectory_reference=args.trajectory_reference,
+        consent_token=consent_token,
+    )
+    response = {
+        "allowed": cycle.verification.allowed,
+        "reason": cycle.verification.reason,
+        "strict_mode": cycle.verification.strict_mode,
+        "rc_state": cycle.rc_state.value,
+        "commit_id": cycle.commit_token.commit_id if cycle.commit_token else None,
+        "execution_returncode": (
+            cycle.execution_result.returncode if cycle.execution_result else None
+        ),
+        "execution_stdout": cycle.execution_result.stdout if cycle.execution_result else None,
+        "ledger_index": cycle.ledger_entry["index"],
+        "ledger_event": cycle.ledger_entry["payload"]["event"],
+        "ledger_path": str(runtime.ledger.path),
+    }
+    _print_result(response)
+    return 0 if cycle.verification.allowed else 2
+
+
+def _run_demo(args: argparse.Namespace) -> int:
+    state_dir = args.state_dir.resolve()
+    runtime = _build_runtime(args.manifest.resolve(), state_dir)
+    cycle = runtime.run_command_cycle(
+        user_text="Run the safe demo action.",
+        proposal_text="Execute a reversible sandbox-safe demo command.",
+        action_class="WRITE_FILE",
+        scope="workspace:project",
+        effect_class=EffectClass.REVERSIBLE,
+        command=("echo", "ree_openclaw_demo_ok"),
+        rc_conflict_score=0.2,
+        llm_role="rollout",
+        model_call_id="demo-model-call",
+        prompt_hash="demo-prompt-hash",
+        input_provenance=("demo-user-message",),
+        trajectory_reference="demo/trajectory/001",
+    )
+    response = {
+        "allowed": cycle.verification.allowed,
+        "reason": cycle.verification.reason,
+        "rc_state": cycle.rc_state.value,
+        "commit_id": cycle.commit_token.commit_id if cycle.commit_token else None,
+        "execution_stdout": cycle.execution_result.stdout if cycle.execution_result else None,
+        "ledger_index": cycle.ledger_entry["index"],
+        "ledger_event": cycle.ledger_entry["payload"]["event"],
+        "ledger_path": str(runtime.ledger.path),
+    }
+    _print_result(response)
+    return 0 if cycle.verification.allowed else 2
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="REE_OpenClaw local prototype CLI")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    run_cycle = subparsers.add_parser(
+        "run-cycle",
+        help="Run one full proposal -> commit -> execute -> ledger cycle.",
+    )
+    run_cycle.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="Path to capability manifest JSON.",
+    )
+    run_cycle.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(".ree_openclaw_state"),
+        help="Directory for runtime ledger/audit/sandbox state.",
+    )
+    run_cycle.add_argument("--user-text", default="Execute the requested sandbox action.")
+    run_cycle.add_argument(
+        "--proposal-text",
+        default="Propose one tool execution under verifier gating.",
+    )
+    run_cycle.add_argument("--action-class", default="WRITE_FILE")
+    run_cycle.add_argument("--scope", default="workspace:project")
+    run_cycle.add_argument(
+        "--effect-class",
+        choices=[effect.value for effect in EffectClass],
+        default=EffectClass.REVERSIBLE.value,
+    )
+    run_cycle.add_argument("--rc-score", type=float, default=0.2)
+    run_cycle.add_argument("--llm-role", default="rollout")
+    run_cycle.add_argument("--model-call-id", default="cli-model-call")
+    run_cycle.add_argument("--prompt-hash", default="cli-prompt-hash")
+    run_cycle.add_argument(
+        "--input-provenance",
+        nargs="*",
+        default=["cli-user-input"],
+    )
+    run_cycle.add_argument("--trajectory-reference", default="cli/trajectory/001")
+    run_cycle.add_argument(
+        "--consent",
+        action="store_true",
+        help="Attach a matching consent token for action/scope.",
+    )
+    run_cycle.add_argument(
+        "--command",
+        nargs="+",
+        default=["echo", "ree_openclaw_cycle_ok"],
+        help="Sandbox command to execute.",
+    )
+    run_cycle.set_defaults(handler=_run_cycle)
+
+    run_demo = subparsers.add_parser(
+        "run-demo",
+        help="Run a safe built-in demo scenario.",
+    )
+    run_demo.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="Path to capability manifest JSON.",
+    )
+    run_demo.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(".ree_openclaw_state"),
+        help="Directory for runtime ledger/audit/sandbox state.",
+    )
+    run_demo.set_defaults(handler=_run_demo)
+    return parser
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+    return args.handler(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

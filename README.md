@@ -1,0 +1,64 @@
+# REE_OpenClaw
+
+REE_OpenClaw is a standalone implementation testbed for applying Reflective Ethical Engine (REE) authority, commitment, and responsibility invariants to an OpenClaw-class shell.
+
+## Goals
+
+- Keep untrusted channels (`OBS`/`INS`/`TRAJ`) separated from trusted store types (`POL`/`ID`/`CAPS`).
+- Gate privileged and destructive actions through verifier + RC posture checks.
+- Mint explicit commit tokens before execution and persist append-only post-commit traces.
+- Keep local execution lightweight for macOS development, with optional Docker parity.
+
+## Quick Start (macOS / native Python)
+
+```bash
+make setup
+source .venv/bin/activate
+make test
+make run-demo
+```
+
+`make run-demo` runs a safe local prototype cycle:
+
+1. Proposal is routed through typed boundary.
+2. RC hysteresis updates posture.
+3. Verifier decides action eligibility.
+4. Commit token is minted if allowed.
+5. Action executes inside the local sandbox harness.
+6. Append-only ledger records the result.
+
+## Prototype CLI
+
+Run one full configurable cycle:
+
+```bash
+python3 -m ree_openclaw.cli run-cycle --command echo "hello from cycle"
+```
+
+Run the built-in safe demo:
+
+```bash
+python3 -m ree_openclaw.cli run-demo
+```
+
+Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log).
+
+## Optional Docker Path
+
+Docker is optional and kept for sandbox parity:
+
+```bash
+make sandbox-test
+```
+
+This builds `sandbox/Dockerfile` and runs tests in-container.
+
+## Milestone Audit (M0-M5)
+
+Current status and exact remaining gaps are maintained in:
+
+- `docs/milestones_m0_m5_audit.md`
+
+## Status
+
+v0 now includes a practical local runtime cycle and prototype CLI for MacBook Air-class development, while keeping Docker-based testing optional.
