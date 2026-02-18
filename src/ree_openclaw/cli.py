@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ree_openclaw.offline.consolidation import OfflineTriggerError
 from ree_openclaw.rc.scoring import RCConflictSignals
 from ree_openclaw.runtime import OpenClawRuntime, RolloutProposal, RolloutSignals
 from ree_openclaw.types import EffectClass
@@ -182,6 +183,23 @@ def _plan_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_offline_consolidate(args: argparse.Namespace) -> int:
+    state_dir = args.state_dir.resolve()
+    runtime = _build_runtime(args.manifest.resolve(), state_dir)
+    try:
+        result = runtime.run_offline_consolidation(trigger_source=args.trigger_source)
+    except OfflineTriggerError as exc:
+        _print_result({"allowed": False, "reason": str(exc)})
+        return 2
+    response = {
+        "output_path": str(result.output_path),
+        "processed_entries": result.processed_entries,
+        "generated_at": result.generated_at,
+    }
+    _print_result(response)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="REE_OpenClaw local prototype CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -281,6 +299,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory for runtime ledger/audit/sandbox state.",
     )
     plan_demo.set_defaults(handler=_plan_demo)
+
+    offline = subparsers.add_parser(
+        "offline-consolidate",
+        help="Run protected offline consolidation from post-commit ledger traces.",
+    )
+    offline.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="Path to capability manifest JSON.",
+    )
+    offline.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(".ree_openclaw_state"),
+        help="Directory for runtime ledger/audit/sandbox state.",
+    )
+    offline.add_argument(
+        "--trigger-source",
+        default="operator_cli",
+        help="Offline trigger source label (allowed: operator_cli, scheduler).",
+    )
+    offline.set_defaults(handler=_run_offline_consolidate)
     return parser
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -34,6 +35,8 @@ class AppendOnlyLedger:
         }
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(entry, sort_keys=True) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
         return entry
 
     def read_all(self) -> list[dict[str, Any]]:
@@ -68,4 +71,3 @@ class AppendOnlyLedger:
                 return False
             previous_hash = entry["entry_hash"]
         return True
-

@@ -7,6 +7,7 @@ from typing import Any, Sequence
 from ree_openclaw.adapter.routing import TypedBoundaryRouter
 from ree_openclaw.commit.token import CommitToken, mint_commit_token
 from ree_openclaw.ledger.append_only import AppendOnlyLedger
+from ree_openclaw.offline.consolidation import ConsolidationResult, OfflineConsolidator
 from ree_openclaw.rc.hysteresis import RCHysteresis, RCHysteresisConfig, RCState
 from ree_openclaw.rc.scoring import RCConflictScorer, RCConflictSignals
 from ree_openclaw.rollout.planner import (
@@ -81,6 +82,7 @@ class OpenClawRuntime:
         self.rc_scorer = rc_scorer or RCConflictScorer()
         self.verifier = CapabilityVerifier(capabilities, audit_log_path=audit_log_path)
         self.ledger = AppendOnlyLedger(ledger_path)
+        self.offline = OfflineConsolidator(self.ledger, ledger_path.parent / "offline")
         self.executor = SandboxedExecutor(sandbox_root, policy=sandbox_policy)
 
     @classmethod
@@ -219,6 +221,9 @@ class OpenClawRuntime:
             candidates,
             signal_overrides=signal_overrides,
         )
+
+    def run_offline_consolidation(self, *, trigger_source: str = "operator_cli") -> ConsolidationResult:
+        return self.offline.consolidate(trigger_source=trigger_source)
 
     def run_command_cycle(
         self,

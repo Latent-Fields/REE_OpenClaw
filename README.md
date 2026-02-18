@@ -17,6 +17,7 @@ source .venv/bin/activate
 make test
 make run-plan-demo
 make run-demo
+make offline-consolidate
 ```
 
 `make run-demo` runs a safe local prototype cycle:
@@ -58,6 +59,12 @@ Run rollout planning only (no commit, no execute, no ledger append):
 python3 -m ree_openclaw.cli plan-demo
 ```
 
+Run protected offline consolidation from post-commit traces:
+
+```bash
+python3 -m ree_openclaw.cli offline-consolidate
+```
+
 Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log).
 
 ## Optional Docker Path
@@ -72,7 +79,7 @@ This builds `sandbox/Dockerfile` and runs tests in-container.
 
 ## Milestone Audit (M0-M5)
 
-Current status and exact remaining gaps are maintained in:
+Current status and milestone coverage are maintained in:
 
 - `docs/milestones_m0_m5_audit.md`
 

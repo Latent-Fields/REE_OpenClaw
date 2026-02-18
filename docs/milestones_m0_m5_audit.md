@@ -11,9 +11,10 @@ Implemented:
 - Typed adapter boundary exists (`src/ree_openclaw/adapter/routing.py`).
 - User/LLM channels route as untrusted payloads (`OBS`/`INS`/`TRAJ`).
 - Direct untrusted writes to `POL`/`ID`/`CAPS` are blocked.
+- Dedicated trusted-store module exists (`src/ree_openclaw/stores/trusted.py`).
 
 Gaps:
-- No dedicated trusted-store module yet; only type-level boundary enforcement exists.
+- No remaining M0 gap for v0 prototype scope.
 
 ## M1 - Verifier + Capability Manifests
 
@@ -37,10 +38,11 @@ Status: Implemented
 Implemented:
 - Commit token minting contract exists (`src/ree_openclaw/commit/token.py`).
 - Append-only hash-chain ledger exists (`src/ree_openclaw/ledger/append_only.py`).
+- Ledger appends are durability-flushed (`fsync`) for local prototype use.
 - Integrated runtime cycle stamps commit token before execution and writes ledger entry.
 
 Gaps:
-- Ledger durability is file-local JSONL; no external immutable storage backend yet.
+- No remaining M2 gap for v0 local prototype scope.
 
 ## M3 - RC Conflict Hysteresis
 
@@ -70,12 +72,13 @@ Gaps:
 
 ## M5 - Offline Consolidation
 
-Status: Not implemented
+Status: Implemented
 
 Implemented:
-- Documentation-level framing exists.
+- Offline consolidator exists (`src/ree_openclaw/offline/consolidation.py`).
+- Protected trigger boundary blocks untrusted trigger sources.
+- Consolidation emits action reliability summaries from post-commit ledger traces.
+- Runtime and CLI hooks exist for operator/scheduler-triggered consolidation.
 
 Gaps:
-- No offline consolidation job or replay pipeline.
-- No protected mechanism for post-commit-only durable learning updates.
-- No runtime hooks for skill reliability updates from post-commit traces.
+- No remaining M5 gap for v0 prototype scope.
