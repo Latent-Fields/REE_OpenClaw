@@ -48,6 +48,13 @@ class ProposalCycleResult:
 
 
 class OpenClawRuntime:
+    _IMPLEMENTED_VERIFIER_LABELS = (
+        "scope_verifier",
+        "consent_verifier",
+        "destructive_action_verifier",
+        "provenance_verifier",
+    )
+
     def __init__(
         self,
         *,
@@ -108,6 +115,15 @@ class OpenClawRuntime:
                 rc_state=rc_state,
                 rc_conflict_score=proposal.rc_conflict_score,
                 consent_token=proposal.consent_token,
+                provenance={
+                    "source_class": proposal_envelope.provenance.source_class,
+                    "source_id": proposal_envelope.provenance.source_id,
+                    "model_call_id": proposal_envelope.provenance.model_call_id,
+                    "prompt_hash": proposal_envelope.provenance.prompt_hash,
+                    "input_provenance": proposal_envelope.provenance.input_provenance,
+                    "timestamp": proposal_envelope.provenance.timestamp,
+                },
+                provided_verifiers=self._IMPLEMENTED_VERIFIER_LABELS,
             )
         )
 

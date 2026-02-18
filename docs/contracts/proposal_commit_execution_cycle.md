@@ -21,6 +21,7 @@ Define the required runtime order for action release in `REE_OpenClaw`.
 
 3. Verifier decision
 - Verifier checks capability manifest action/effect/scope agreement.
+- Verifier checks `required_verifiers` coverage and `provenance_bindings`.
 - Consent is required per capability and strict posture rules.
 - `LOCKDOWN` blocks privileged/destructive actions.
 

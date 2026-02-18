@@ -2,7 +2,7 @@
 
 Doc: `docs/contracts/skill_capability_manifest.md`  
 Date: 2026-02-18  
-Status: Draft (v0)
+Status: Active (v0 prototype)
 
 ## Purpose
 
@@ -40,7 +40,7 @@ Before action release, verifier must ensure:
 
 1. Action exists in manifest.
 2. Requested scope is allowed.
-3. Consent requirements are satisfied.
-4. Required provenance fields are present.
-5. RC posture-specific restrictions are applied.
-
+3. Every `required_verifiers` label is covered by the runtime verifier set.
+4. Required provenance fields are present and non-empty.
+5. Consent requirements are satisfied.
+6. RC posture-specific restrictions are applied.

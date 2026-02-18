@@ -16,7 +16,7 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 
 2. Verifier (`src/ree_openclaw/verifier`)
 - Loads and validates capability manifests.
-- Enforces consent and scope rules for privileged actions.
+- Enforces required verifier labels, provenance bindings, consent, and scope rules.
 - Produces auditable verification decisions.
 
 3. RC Conflict Lane (`src/ree_openclaw/rc`)
@@ -49,6 +49,7 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 2. M1 Verifier + Manifests
 - Capability manifest schema and loader implemented.
 - Verifier checks and audit logging implemented.
+- `required_verifiers` and `provenance_bindings` are enforced at verification time.
 - `LOCKDOWN` posture blocks privileged/destructive action release.
 
 3. M2 Commit Token + Ledger

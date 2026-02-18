@@ -22,11 +22,13 @@ Status: Implemented
 Implemented:
 - Capability manifest loader exists (`src/ree_openclaw/verifier/capability_manifest.py`).
 - Verifier checks action class, effect class, scope, consent, and RC strict mode.
+- Verifier enforces manifest `required_verifiers` coverage.
+- Verifier enforces manifest `provenance_bindings` presence/non-empty values.
 - Verifier audit log path is supported.
 - LOCKDOWN posture blocks privileged/destructive actions.
 
 Gaps:
-- `required_verifiers` and `provenance_bindings` are loaded but not yet enforced semantically.
+- No remaining M1 gap for v0 prototype scope.
 
 ## M2 - Commit Token + Post-Commit Ledger
 

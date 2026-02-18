@@ -37,6 +37,8 @@ class VerificationRequest:
     rc_state: RCState = RCState.NORMAL
     rc_conflict_score: float = 0.0
     consent_token: ConsentToken | None = None
+    provenance: dict[str, object] | None = None
+    provided_verifiers: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -85,6 +87,33 @@ class CapabilityVerifier:
             decision = VerificationDecision(
                 allowed=False,
                 reason="scope_not_allowed",
+                requires_consent=False,
+                strict_mode=False,
+            )
+            self._audit(request, decision)
+            return decision
+
+        provided_verifiers = set(request.provided_verifiers)
+        missing_verifiers = [
+            label for label in capability.required_verifiers if label not in provided_verifiers
+        ]
+        if missing_verifiers:
+            decision = VerificationDecision(
+                allowed=False,
+                reason="required_verifier_missing",
+                requires_consent=False,
+                strict_mode=False,
+            )
+            self._audit(request, decision)
+            return decision
+
+        missing_bindings = self._missing_provenance_bindings(
+            capability.provenance_bindings, request.provenance
+        )
+        if missing_bindings:
+            decision = VerificationDecision(
+                allowed=False,
+                reason="provenance_binding_missing",
                 requires_consent=False,
                 strict_mode=False,
             )
@@ -143,6 +172,27 @@ class CapabilityVerifier:
         self._audit(request, decision)
         return decision
 
+    @staticmethod
+    def _missing_provenance_bindings(
+        required_bindings: tuple[str, ...], provenance: dict[str, object] | None
+    ) -> list[str]:
+        if not required_bindings:
+            return []
+        if provenance is None:
+            return list(required_bindings)
+        missing: list[str] = []
+        for key in required_bindings:
+            value = provenance.get(key)
+            if value is None:
+                missing.append(key)
+                continue
+            if isinstance(value, str) and value.strip() == "":
+                missing.append(key)
+                continue
+            if isinstance(value, (tuple, list, dict, set)) and len(value) == 0:
+                missing.append(key)
+        return missing
+
     def _audit(self, request: VerificationRequest, decision: VerificationDecision) -> None:
         if self.audit_log_path is None:
             return
@@ -154,6 +204,8 @@ class CapabilityVerifier:
                 "effect_class": request.effect_class.value,
                 "rc_state": request.rc_state.value,
                 "rc_conflict_score": request.rc_conflict_score,
+                "provenance": request.provenance,
+                "provided_verifiers": list(request.provided_verifiers),
             },
             "decision": asdict(decision),
         }

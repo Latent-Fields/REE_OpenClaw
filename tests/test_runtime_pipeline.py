@@ -95,3 +95,26 @@ def test_lockdown_blocks_privileged_even_with_consent(tmp_path: Path) -> None:
     assert result.commit_token is None
     assert result.execution_result is None
     assert result.ledger_entry["payload"]["event"] == "proposal_rejected"
+
+
+def test_runtime_rejects_when_provenance_binding_missing(tmp_path: Path) -> None:
+    runtime = OpenClawRuntime.from_manifest(
+        manifest_path=_manifest_path(),
+        ledger_path=tmp_path / "ledger.jsonl",
+        sandbox_root=tmp_path / "sandbox",
+    )
+
+    result = runtime.run_command_cycle(
+        user_text="Run safe action.",
+        proposal_text="Run write file action.",
+        action_class="WRITE_FILE",
+        scope="workspace:project",
+        effect_class=EffectClass.REVERSIBLE,
+        command=("echo", "should_not_run"),
+        rc_conflict_score=0.2,
+    )
+
+    assert not result.verification.allowed
+    assert result.verification.reason == "provenance_binding_missing"
+    assert result.commit_token is None
+    assert result.execution_result is None
