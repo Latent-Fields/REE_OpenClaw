@@ -9,6 +9,12 @@ from ree_openclaw.commit.token import CommitToken, mint_commit_token
 from ree_openclaw.ledger.append_only import AppendOnlyLedger
 from ree_openclaw.rc.hysteresis import RCHysteresis, RCHysteresisConfig, RCState
 from ree_openclaw.rc.scoring import RCConflictScorer, RCConflictSignals
+from ree_openclaw.rollout.planner import (
+    RolloutEvaluation,
+    RolloutPlanner,
+    RolloutProposal,
+    RolloutSignals,
+)
 from ree_openclaw.sandbox.harness import SandboxPolicy, SandboxResult, SandboxedExecutor
 from ree_openclaw.types import EffectClass, Envelope
 from ree_openclaw.verifier.capability_manifest import load_capabilities
@@ -70,6 +76,7 @@ class OpenClawRuntime:
         audit_log_path: Path | None = None,
     ) -> None:
         self.router = TypedBoundaryRouter()
+        self.rollout_planner = RolloutPlanner(router=self.router)
         self.rc_lane = RCHysteresis(rc_config)
         self.rc_scorer = rc_scorer or RCConflictScorer()
         self.verifier = CapabilityVerifier(capabilities, audit_log_path=audit_log_path)
@@ -198,6 +205,19 @@ class OpenClawRuntime:
             commit_token=commit_token,
             execution_result=execution_result,
             ledger_entry=ledger_entry,
+        )
+
+    def plan_rollouts(
+        self,
+        proposals: Sequence[RolloutProposal],
+        *,
+        signal_overrides: dict[str, RolloutSignals] | None = None,
+    ) -> list[RolloutEvaluation]:
+        """Build and rank pre-commit rollout candidates without executing actions."""
+        candidates = self.rollout_planner.build_candidates(proposals)
+        return self.rollout_planner.rank_candidates(
+            candidates,
+            signal_overrides=signal_overrides,
         )
 
     def run_command_cycle(

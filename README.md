@@ -15,6 +15,7 @@ REE_OpenClaw is a standalone implementation testbed for applying Reflective Ethi
 make setup
 source .venv/bin/activate
 make test
+make run-plan-demo
 make run-demo
 ```
 
@@ -49,6 +50,12 @@ Run the built-in safe demo:
 
 ```bash
 python3 -m ree_openclaw.cli run-demo
+```
+
+Run rollout planning only (no commit, no execute, no ledger append):
+
+```bash
+python3 -m ree_openclaw.cli plan-demo
 ```
 
 Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log).

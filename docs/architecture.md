@@ -40,6 +40,11 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 - Produces explicit rejection ledger entries when verifier denies action release.
 - Exposed via local CLI (`src/ree_openclaw/cli.py`) for practical prototype execution on macOS.
 
+8. Rollout Planner (`src/ree_openclaw/rollout`)
+- Builds pre-commit `TRAJ`-typed rollout candidates.
+- Applies viability/valence scoring overlay for candidate ranking.
+- Keeps imagination/planning separate from commitment and durable writes.
+
 ## Milestone Map
 
 1. M0 Integration Skeleton
@@ -63,8 +68,8 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 - Runtime computes RC score and updates posture before verifier decision.
 
 5. M4 Rollout Interface
-- `TRAJ` typing and pre-commit separation are partially implemented.
-- Dedicated rollout planner/scoring interface remains pending.
+- `TRAJ` typing and pre-commit separation are implemented.
+- Rollout planner and viability/valence ranking overlay are implemented.
 
 6. M5 Offline Consolidation
 - Documented only; offline consolidation runtime is not implemented yet.

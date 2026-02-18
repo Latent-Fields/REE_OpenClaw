@@ -57,15 +57,16 @@ Gaps:
 
 ## M4 - Rollout Interface Separation
 
-Status: Partially implemented
+Status: Implemented
 
 Implemented:
 - `TRAJ` payload type exists and is used for rollout role routing.
-- Integrated runtime treats LLM proposal output as untrusted pre-commit envelope.
+- Dedicated rollout planner interface exists (`src/ree_openclaw/rollout/planner.py`).
+- Runtime exposes pre-commit rollout planning with viability/valence ranking overlay (`OpenClawRuntime.plan_rollouts`).
+- Rollout planning is pre-commit only (no ledger append, no action execution).
 
 Gaps:
-- No dedicated hippocampal rollout planner/scoring interface yet.
-- No explicit viability/valence ranking overlay for candidate rollouts.
+- No remaining M4 gap for v0 prototype scope.
 
 ## M5 - Offline Consolidation
 

@@ -2,7 +2,7 @@ PYTHON ?= python3
 VENV ?= .venv
 VENV_PIP := $(VENV)/bin/pip
 
-.PHONY: setup install-dev test lint run-cycle run-demo sandbox-test
+.PHONY: setup install-dev test lint run-cycle run-demo run-plan-demo sandbox-test
 
 setup:
 	$(PYTHON) -m venv $(VENV)
@@ -23,6 +23,9 @@ run-cycle:
 
 run-demo:
 	$(PYTHON) -m ree_openclaw.cli run-demo
+
+run-plan-demo:
+	$(PYTHON) -m ree_openclaw.cli plan-demo
 
 sandbox-test:
 	./scripts/run_sandbox_tests.sh

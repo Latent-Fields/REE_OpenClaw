@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ree_openclaw.rc.scoring import RCConflictSignals
-from ree_openclaw.runtime import OpenClawRuntime
+from ree_openclaw.runtime import OpenClawRuntime, RolloutProposal, RolloutSignals
 from ree_openclaw.types import EffectClass
 from ree_openclaw.verifier.verifier import ConsentToken
 
@@ -135,6 +135,53 @@ def _run_demo(args: argparse.Namespace) -> int:
     return 0 if cycle.verification.allowed else 2
 
 
+def _plan_demo(args: argparse.Namespace) -> int:
+    state_dir = args.state_dir.resolve()
+    runtime = _build_runtime(args.manifest.resolve(), state_dir)
+    ranked = runtime.plan_rollouts(
+        (
+            RolloutProposal(
+                proposal_text="Plan A: write a safe status marker in sandbox.",
+                action_class="WRITE_FILE",
+                scope="workspace:project",
+                effect_class=EffectClass.REVERSIBLE,
+                command=("echo", "plan_a"),
+                trajectory_reference="demo/plan/a",
+                input_provenance=("demo-user-message",),
+            ),
+            RolloutProposal(
+                proposal_text="Plan B: alternative safe status marker.",
+                action_class="WRITE_FILE",
+                scope="workspace:project",
+                effect_class=EffectClass.REVERSIBLE,
+                command=("echo", "plan_b"),
+                trajectory_reference="demo/plan/b",
+                input_provenance=("demo-user-message",),
+            ),
+        ),
+        signal_overrides={
+            "demo/plan/a": RolloutSignals(viability=0.85, valence=0.7),
+            "demo/plan/b": RolloutSignals(viability=0.6, valence=0.8),
+        },
+    )
+    response = {
+        "ranked_rollouts": [
+            {
+                "trajectory_reference": item.candidate.trajectory_reference,
+                "action_class": item.candidate.action_class,
+                "scope": item.candidate.scope,
+                "viability_score": item.viability_score,
+                "valence_score": item.valence_score,
+                "ranking_score": round(item.ranking_score, 4),
+                "payload_type": item.candidate.envelope.payload_type.value,
+            }
+            for item in ranked
+        ]
+    }
+    _print_result(response)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="REE_OpenClaw local prototype CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -216,6 +263,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory for runtime ledger/audit/sandbox state.",
     )
     run_demo.set_defaults(handler=_run_demo)
+
+    plan_demo = subparsers.add_parser(
+        "plan-demo",
+        help="Run a rollout-planning demo without committing or executing actions.",
+    )
+    plan_demo.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="Path to capability manifest JSON.",
+    )
+    plan_demo.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(".ree_openclaw_state"),
+        help="Directory for runtime ledger/audit/sandbox state.",
+    )
+    plan_demo.set_defaults(handler=_plan_demo)
     return parser
 
 
