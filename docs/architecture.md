@@ -53,6 +53,10 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 - Consolidates post-commit traces into action reliability summaries.
 - Allows only protected trigger sources (`operator_cli`, `scheduler`).
 
+11. Autonomous Session Runner (`src/ree_openclaw/agent`)
+- Runs bounded multi-step sessions using rollout ranking and runtime action release.
+- Applies stop guards (`max_steps`, stop-on-reject) for safe autonomy prototyping.
+
 ## Milestone Map
 
 1. M0 Integration Skeleton

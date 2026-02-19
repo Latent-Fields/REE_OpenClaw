@@ -17,6 +17,7 @@ source .venv/bin/activate
 make test
 make run-plan-demo
 make run-demo
+make run-autonomy-demo
 make offline-consolidate
 ```
 
@@ -65,6 +66,13 @@ Run protected offline consolidation from post-commit traces:
 python3 -m ree_openclaw.cli offline-consolidate
 ```
 
+Run guarded multi-step autonomy demo:
+
+```bash
+python3 -m ree_openclaw.cli autonomy-demo --scenario safe
+python3 -m ree_openclaw.cli autonomy-demo --scenario guarded
+```
+
 Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log).
 
 ## Optional Docker Path
@@ -82,6 +90,7 @@ This builds `sandbox/Dockerfile` and runs tests in-container.
 Current status and milestone coverage are maintained in:
 
 - `docs/milestones_m0_m5_audit.md`
+- `docs/roadmap_autonomous_agent.md`
 
 ## Status
 

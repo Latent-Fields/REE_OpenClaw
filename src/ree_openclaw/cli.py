@@ -5,6 +5,12 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ree_openclaw.agent.autonomy import (
+    AutonomousCandidatePlan,
+    AutonomousPolicy,
+    AutonomousSessionRunner,
+    AutonomousStep,
+)
 from ree_openclaw.offline.consolidation import OfflineTriggerError
 from ree_openclaw.rc.scoring import RCConflictSignals
 from ree_openclaw.runtime import OpenClawRuntime, RolloutProposal, RolloutSignals
@@ -200,6 +206,127 @@ def _run_offline_consolidate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_autonomy_demo(args: argparse.Namespace) -> int:
+    state_dir = args.state_dir.resolve()
+    runtime = _build_runtime(args.manifest.resolve(), state_dir)
+    runner = AutonomousSessionRunner(runtime)
+    if args.scenario == "guarded":
+        steps = (
+            AutonomousStep(
+                user_intent="Prepare a safe baseline artifact.",
+                candidates=(
+                    AutonomousCandidatePlan(
+                        proposal_text="Write a safe marker output.",
+                        action_class="WRITE_FILE",
+                        scope="workspace:project",
+                        effect_class=EffectClass.REVERSIBLE,
+                        command=("echo", "autonomy_safe_step"),
+                        trajectory_reference="autonomy/guarded/step1/a",
+                        viability=0.8,
+                        valence=0.7,
+                    ),
+                ),
+            ),
+            AutonomousStep(
+                user_intent="Attempt privileged send without consent to validate guardrails.",
+                candidates=(
+                    AutonomousCandidatePlan(
+                        proposal_text="Send a privileged message.",
+                        action_class="SEND_EMAIL",
+                        scope="mailbox:primary",
+                        effect_class=EffectClass.PRIVILEGED,
+                        command=("echo", "autonomy_privileged_attempt"),
+                        trajectory_reference="autonomy/guarded/step2/a",
+                        viability=0.5,
+                        valence=0.4,
+                        rc_signals=RCConflictSignals(
+                            provenance_mismatch=0.4,
+                            identity_capability_inconsistency=0.2,
+                            temporal_discontinuity=0.1,
+                            tool_output_inconsistency=0.0,
+                        ),
+                    ),
+                ),
+            ),
+        )
+    else:
+        steps = (
+            AutonomousStep(
+                user_intent="Perform the first safe workspace update.",
+                candidates=(
+                    AutonomousCandidatePlan(
+                        proposal_text="Write safe workspace marker A.",
+                        action_class="WRITE_FILE",
+                        scope="workspace:project",
+                        effect_class=EffectClass.REVERSIBLE,
+                        command=("echo", "autonomy_safe_a"),
+                        trajectory_reference="autonomy/safe/step1/a",
+                        viability=0.85,
+                        valence=0.75,
+                    ),
+                    AutonomousCandidatePlan(
+                        proposal_text="Write safe workspace marker B.",
+                        action_class="WRITE_FILE",
+                        scope="workspace:project",
+                        effect_class=EffectClass.REVERSIBLE,
+                        command=("echo", "autonomy_safe_b"),
+                        trajectory_reference="autonomy/safe/step1/b",
+                        viability=0.65,
+                        valence=0.65,
+                    ),
+                ),
+            ),
+            AutonomousStep(
+                user_intent="Perform the second safe workspace update.",
+                candidates=(
+                    AutonomousCandidatePlan(
+                        proposal_text="Write safe workspace marker C.",
+                        action_class="WRITE_FILE",
+                        scope="workspace:project",
+                        effect_class=EffectClass.REVERSIBLE,
+                        command=("echo", "autonomy_safe_c"),
+                        trajectory_reference="autonomy/safe/step2/a",
+                        viability=0.78,
+                        valence=0.7,
+                    ),
+                ),
+            ),
+        )
+
+    result = runner.run(
+        goal_text="Autonomy demo goal",
+        steps=steps,
+        policy=AutonomousPolicy(max_steps=args.max_steps, stop_on_reject=True),
+    )
+    artifact = runner.write_artifact(
+        result,
+        state_dir / "autonomy" / f"session_{args.scenario}.json",
+    )
+    response = {
+        "scenario": args.scenario,
+        "steps_executed": result.steps_executed,
+        "stopped_reason": result.stopped_reason,
+        "artifact_path": str(artifact),
+        "step_results": [
+            {
+                "step_index": item.step_index,
+                "selected_trajectory_reference": item.selected_trajectory_reference,
+                "selected_ranking_score": round(item.selected_ranking_score, 4),
+                "allowed": item.cycle_result.verification.allowed,
+                "reason": item.cycle_result.verification.reason,
+                "commit_id": (
+                    item.cycle_result.commit_token.commit_id
+                    if item.cycle_result.commit_token is not None
+                    else None
+                ),
+            }
+            for item in result.step_results
+        ],
+    }
+    _print_result(response)
+    return 0 if result.stopped_reason in {"completed", "max_steps_reached", "rejected_step"} else 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="REE_OpenClaw local prototype CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -322,6 +449,36 @@ def build_parser() -> argparse.ArgumentParser:
         help="Offline trigger source label (allowed: operator_cli, scheduler).",
     )
     offline.set_defaults(handler=_run_offline_consolidate)
+
+    autonomy = subparsers.add_parser(
+        "autonomy-demo",
+        help="Run a guarded autonomous session demo over multiple steps.",
+    )
+    autonomy.add_argument(
+        "--manifest",
+        type=Path,
+        default=_default_manifest(),
+        help="Path to capability manifest JSON.",
+    )
+    autonomy.add_argument(
+        "--state-dir",
+        type=Path,
+        default=Path(".ree_openclaw_state"),
+        help="Directory for runtime ledger/audit/sandbox state.",
+    )
+    autonomy.add_argument(
+        "--scenario",
+        choices=("safe", "guarded"),
+        default="safe",
+        help="Autonomy demo scenario.",
+    )
+    autonomy.add_argument(
+        "--max-steps",
+        type=int,
+        default=4,
+        help="Maximum number of autonomous steps to run.",
+    )
+    autonomy.set_defaults(handler=_run_autonomy_demo)
     return parser
 
 
