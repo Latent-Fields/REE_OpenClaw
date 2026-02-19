@@ -28,9 +28,21 @@ Per step flow:
 Session policy requires:
 
 - `max_steps` bound
+- optional `max_command_count` bound
+- optional `max_wall_clock_seconds` bound
 - optional `stop_on_reject`
 
 If a step is rejected and `stop_on_reject` is enabled, the session stops immediately.
+If command-count or wall-clock budgets are exhausted, the session stops with guardrail reasons.
+
+Prototype stop reasons:
+
+- `completed`
+- `max_steps_reached`
+- `max_command_count_reached`
+- `max_wall_clock_reached`
+- `rejected_step`
+- `no_candidates`
 
 ## Scope
 

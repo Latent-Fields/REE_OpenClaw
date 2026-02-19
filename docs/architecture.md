@@ -55,7 +55,7 @@ REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, la
 
 11. Autonomous Session Runner (`src/ree_openclaw/agent`)
 - Runs bounded multi-step sessions using rollout ranking and runtime action release.
-- Applies stop guards (`max_steps`, stop-on-reject) for safe autonomy prototyping.
+- Applies stop guards (`max_steps`, `max_command_count`, `max_wall_clock_seconds`, stop-on-reject) for safe autonomy prototyping.
 
 ## Milestone Map
 

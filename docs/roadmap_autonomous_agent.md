@@ -21,7 +21,7 @@ Goal: make multi-step autonomy reliable and inspectable.
 
 Work items:
 
-1. Add per-session budget guards (token/time/tool-call limits).
+1. Add per-session budget guards (token/time/tool-call limits). (Completed in prototype)
 2. Add persistent session memory separate from trusted stores.
 3. Add explicit retry/backoff policy for reversible actions.
 4. Add action failure classification and recovery transitions.
@@ -81,8 +81,8 @@ Exit criteria:
 
 ## Immediate Next Engineering Slice
 
-Start with Phase 1 item #1:
+Proceed with Phase 1 item #2:
 
-- implement session budget guardrails in `AutonomousSessionRunner`
-- enforce max wall-clock duration and max command count
-- add failing tests first, then implementation
+- add persistent session memory for autonomy runs (separate from trusted stores)
+- store per-step context and prior outcomes for later candidate construction
+- add replay test ensuring memory does not bypass verifier/commit gates

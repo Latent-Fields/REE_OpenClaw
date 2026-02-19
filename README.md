@@ -71,6 +71,7 @@ Run guarded multi-step autonomy demo:
 ```bash
 python3 -m ree_openclaw.cli autonomy-demo --scenario safe
 python3 -m ree_openclaw.cli autonomy-demo --scenario guarded
+python3 -m ree_openclaw.cli autonomy-demo --scenario safe --max-command-count 2 --max-wall-clock-seconds 10
 ```
 
 Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log).

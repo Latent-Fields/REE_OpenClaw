@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -33,6 +34,8 @@ class AutonomousStep:
 @dataclass(frozen=True)
 class AutonomousPolicy:
     max_steps: int = 5
+    max_command_count: int | None = None
+    max_wall_clock_seconds: float | None = None
     stop_on_reject: bool = True
 
 
@@ -70,8 +73,23 @@ class AutonomousSessionRunner:
         step_results: list[AutonomousStepResult] = []
         stopped_reason = "completed"
         limit = min(active_policy.max_steps, len(steps))
+        command_count = 0
+        start_time = time.monotonic()
 
         for step_index in range(limit):
+            if (
+                active_policy.max_wall_clock_seconds is not None
+                and time.monotonic() - start_time >= active_policy.max_wall_clock_seconds
+            ):
+                stopped_reason = "max_wall_clock_reached"
+                break
+            if (
+                active_policy.max_command_count is not None
+                and command_count >= active_policy.max_command_count
+            ):
+                stopped_reason = "max_command_count_reached"
+                break
+
             step = steps[step_index]
             if not step.candidates:
                 stopped_reason = "no_candidates"
@@ -116,6 +134,7 @@ class AutonomousSessionRunner:
                 input_provenance=(f"autonomy-step-{step_index}",),
                 trajectory_reference=selected_plan.trajectory_reference,
             )
+            command_count += 1
             step_results.append(
                 AutonomousStepResult(
                     step_index=step_index,
@@ -127,8 +146,18 @@ class AutonomousSessionRunner:
             if not cycle.verification.allowed and active_policy.stop_on_reject:
                 stopped_reason = "rejected_step"
                 break
+            if (
+                active_policy.max_wall_clock_seconds is not None
+                and time.monotonic() - start_time >= active_policy.max_wall_clock_seconds
+            ):
+                stopped_reason = "max_wall_clock_reached"
+                break
 
-        if len(step_results) >= active_policy.max_steps and len(steps) > active_policy.max_steps:
+        if (
+            stopped_reason == "completed"
+            and len(step_results) >= active_policy.max_steps
+            and len(steps) > active_policy.max_steps
+        ):
             stopped_reason = "max_steps_reached"
 
         return AutonomousSessionResult(

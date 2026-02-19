@@ -296,7 +296,12 @@ def _run_autonomy_demo(args: argparse.Namespace) -> int:
     result = runner.run(
         goal_text="Autonomy demo goal",
         steps=steps,
-        policy=AutonomousPolicy(max_steps=args.max_steps, stop_on_reject=True),
+        policy=AutonomousPolicy(
+            max_steps=args.max_steps,
+            max_command_count=args.max_command_count,
+            max_wall_clock_seconds=args.max_wall_clock_seconds,
+            stop_on_reject=True,
+        ),
     )
     artifact = runner.write_artifact(
         result,
@@ -324,7 +329,18 @@ def _run_autonomy_demo(args: argparse.Namespace) -> int:
         ],
     }
     _print_result(response)
-    return 0 if result.stopped_reason in {"completed", "max_steps_reached", "rejected_step"} else 2
+    return (
+        0
+        if result.stopped_reason
+        in {
+            "completed",
+            "max_steps_reached",
+            "rejected_step",
+            "max_command_count_reached",
+            "max_wall_clock_reached",
+        }
+        else 2
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -477,6 +493,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=4,
         help="Maximum number of autonomous steps to run.",
+    )
+    autonomy.add_argument(
+        "--max-command-count",
+        type=int,
+        default=None,
+        help="Maximum allowed command cycles during autonomy run.",
+    )
+    autonomy.add_argument(
+        "--max-wall-clock-seconds",
+        type=float,
+        default=None,
+        help="Maximum wall-clock duration for autonomy run.",
     )
     autonomy.set_defaults(handler=_run_autonomy_demo)
     return parser
