@@ -5,14 +5,42 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ree-openclaw"
 version = "0.1.0"
-description = "REE authority and commitment scaffold for OpenClaw-class agent shells."
+description = "Safety-first REE authority/commitment testbed for OpenClaw-class agent shells."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
 authors = [
+  {name = "Daniel Golden"},
   {name = "Latent-Fields"}
 ]
+keywords = [
+  "autonomous-agents",
+  "agent-safety",
+  "sandbox",
+  "verifier",
+  "commitment-ledger",
+  "ree",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: MacOS",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Security",
+]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Latent-Fields/REE_OpenClaw"
+Repository = "https://github.com/Latent-Fields/REE_OpenClaw"
+Issues = "https://github.com/Latent-Fields/REE_OpenClaw/issues"
 
 [project.scripts]
 ree-openclaw = "ree_openclaw.cli:main"

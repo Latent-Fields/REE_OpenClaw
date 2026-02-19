@@ -3,6 +3,18 @@
 Date: 2026-02-18  
 Status: Planning baseline after v0 completion
 
+## Why Build Here
+
+REE_OpenClaw is a strong contributor surface because it already combines:
+
+- typed authority boundaries that block direct trust-store mutation from user/LLM channels
+- explicit verifier + consent policy gates for privileged/destructive actions
+- RC conflict posture control with weighted scoring and hysteresis
+- commit-token and append-only ledger accountability
+- guarded multi-step autonomy loops with safety stop conditions
+
+This lets contributors add autonomous capabilities while preserving safety and auditability constraints.
+
 ## Current Baseline
 
 Implemented now:
@@ -14,6 +26,15 @@ Implemented now:
 - rollout planning/ranking interface
 - protected offline consolidation
 - bounded autonomous session demo runner
+
+## Contributor Priorities
+
+If you want high-impact entry points, start here:
+
+1. Persistent autonomy memory that improves planning without bypassing verifier/commit gates.
+2. Tool substrate expansion for practical local workflows (filesystem/web/operator approval).
+3. Replay + observability tooling for debugging long autonomy traces.
+4. Reliability tuning from offline summaries into guarded playbooks.
 
 ## Phase 1 - Autonomous Loop Hardening
 

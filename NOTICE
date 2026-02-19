@@ -2,8 +2,9 @@ Reflective–Ethical Engine (REE)
 
 Copyright © 2026 Daniel Golden
 
-This repository contains a research and architectural specification
-for the Reflective–Ethical Engine (REE).
+This repository contains implementation code and supporting documents
+for REE_OpenClaw, a Reflective–Ethical Engine (REE) inspired
+authority-and-commitment testbed for OpenClaw-class agent shells.
 
 This work is provided for research and exploratory purposes only.
 It is provided "AS IS", without warranty of any kind.
@@ -12,7 +13,7 @@ This project is not a medical device, not clinical software,
 and must not be used for clinical decision-making.
 
 If this work is used in academic research, architectural design,
-or derivative systems, attribution is requested.
+or derivative systems, attribution is requested via CITATION.cff.
 
 Ethical note:
 This architecture discusses agency, responsibility, and harm.

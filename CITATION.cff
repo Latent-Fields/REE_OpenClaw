@@ -5,11 +5,20 @@ type: software
 authors:
   - family-names: Golden
     given-names: Daniel
+url: "https://github.com/Latent-Fields/REE_OpenClaw"
 repository-code: "https://github.com/Latent-Fields/REE_OpenClaw"
 license: Apache-2.0
 version: 0.1.0
-date-released: 2026-02-18
+date-released: 2026-02-19
+keywords:
+  - "autonomous agents"
+  - "agent safety"
+  - "reflective ethical engine"
+  - "typed authority boundaries"
+  - "commitment ledger"
+  - "sandboxed execution"
 abstract: >
-  REE_OpenClaw is an implementation scaffold that applies REE typed authority,
-  commitment, and post-commit responsibility flow to an OpenClaw-class agent shell.
-
+  REE_OpenClaw is a safety-first implementation testbed that applies REE typed
+  authority boundaries, verifier-gated commitment, RC hysteresis posture control,
+  append-only responsibility tracing, and guarded autonomy loops to an
+  OpenClaw-class agent shell.

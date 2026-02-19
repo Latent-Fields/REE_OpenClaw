@@ -7,6 +7,16 @@ Status: Active prototype
 
 REE_OpenClaw upgrades an OpenClaw-class shell with explicit authority typing, layered commitment eligibility, and post-commit responsibility flow.
 
+## Distinctive Functionality
+
+REE_OpenClaw is designed to be contributor-friendly for autonomy work because it already provides:
+
+1. Typed authority boundaries between untrusted and trusted channels.
+2. Manifest-backed verifier policy (scope, provenance, consent, posture).
+3. RC conflict lane with explicit posture transitions.
+4. Explicit commitment and append-only accountability traces.
+5. Guarded autonomy sessions with bounded stop conditions.
+
 ## Core Subsystems
 
 1. Adapter Boundary (`src/ree_openclaw/adapter`)
