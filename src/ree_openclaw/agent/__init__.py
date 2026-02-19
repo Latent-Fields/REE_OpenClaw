@@ -8,12 +8,15 @@ from ree_openclaw.agent.autonomy import (
     AutonomousStep,
     AutonomousStepResult,
 )
+from ree_openclaw.agent.memory import AutonomousSessionMemoryStore, SessionMemorySummary
 
 __all__ = [
     "AutonomousCandidatePlan",
     "AutonomousPolicy",
+    "AutonomousSessionMemoryStore",
     "AutonomousSessionResult",
     "AutonomousSessionRunner",
+    "SessionMemorySummary",
     "AutonomousStep",
     "AutonomousStepResult",
 ]

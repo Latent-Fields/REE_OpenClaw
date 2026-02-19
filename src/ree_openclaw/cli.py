@@ -309,14 +309,22 @@ def _run_autonomy_demo(args: argparse.Namespace) -> int:
     )
     response = {
         "scenario": args.scenario,
+        "session_id": result.session_id,
         "steps_executed": result.steps_executed,
         "stopped_reason": result.stopped_reason,
         "artifact_path": str(artifact),
+        "memory_path": str(result.memory_path),
+        "memory_summary": {
+            "total_sessions": result.memory_summary.total_sessions,
+            "total_step_records": result.memory_summary.total_step_records,
+            "trajectory_bias": result.memory_summary.trajectory_bias,
+        },
         "step_results": [
             {
                 "step_index": item.step_index,
                 "selected_trajectory_reference": item.selected_trajectory_reference,
                 "selected_ranking_score": round(item.selected_ranking_score, 4),
+                "memory_bias_applied": round(item.memory_bias_applied, 4),
                 "allowed": item.cycle_result.verification.allowed,
                 "reason": item.cycle_result.verification.reason,
                 "commit_id": (

@@ -23,7 +23,8 @@ REE_OpenClaw combines capabilities that are usually split across separate protot
 5. Append-only hash-chained ledger with local durability flush.
 6. Pre-commit rollout planning/ranking separated from execution.
 7. Guarded multi-step autonomy demo with budget controls.
-8. Protected offline consolidation from post-commit traces.
+8. Persistent autonomy session memory separated from trusted stores.
+9. Protected offline consolidation from post-commit traces.
 
 For contributors and users, this means you can work on autonomy features without losing safety/traceability primitives.
 
@@ -76,6 +77,8 @@ python3 -m ree_openclaw.cli autonomy-demo --scenario safe
 python3 -m ree_openclaw.cli autonomy-demo --scenario guarded
 python3 -m ree_openclaw.cli autonomy-demo --scenario safe --max-command-count 2 --max-wall-clock-seconds 10
 ```
+
+`autonomy-demo` persists session memory (session and step records) under runtime state and reuses it only for bounded candidate-selection hints; all action release still passes verifier + commit gates.
 
 Run protected offline consolidation from ledger traces:
 

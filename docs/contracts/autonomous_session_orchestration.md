@@ -12,6 +12,8 @@ Define bounded autonomous multi-step execution on top of REE runtime controls.
 
 Autonomous sessions are composed of ordered steps, where each step includes one or more rollout candidates.
 
+Session memory is persisted in a dedicated autonomy memory store (`agent/memory.py`) and is explicitly separate from trusted `POL`/`ID`/`CAPS` stores.
+
 Per step flow:
 
 1. Build `TRAJ` candidates.
@@ -22,6 +24,7 @@ Per step flow:
    - RC posture
    - verifier
    - commit + execute + ledger (if allowed)
+5. Persist per-step autonomy memory records for later candidate selection biasing.
 
 ## Guards
 

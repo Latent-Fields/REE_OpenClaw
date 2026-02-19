@@ -67,6 +67,10 @@ REE_OpenClaw is designed to be contributor-friendly for autonomy work because it
 - Runs bounded multi-step sessions using rollout ranking and runtime action release.
 - Applies stop guards (`max_steps`, `max_command_count`, `max_wall_clock_seconds`, stop-on-reject) for safe autonomy prototyping.
 
+12. Autonomy Session Memory (`src/ree_openclaw/agent/memory.py`)
+- Persists per-session and per-step context for autonomy replay and candidate-selection hints.
+- Lives outside trusted `POL`/`ID`/`CAPS` stores and does not bypass verifier/commit gates.
+
 ## Milestone Map
 
 1. M0 Integration Skeleton

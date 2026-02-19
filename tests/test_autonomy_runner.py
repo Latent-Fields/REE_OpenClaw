@@ -232,3 +232,52 @@ def test_autonomy_stops_at_max_wall_clock(tmp_path: Path, monkeypatch: pytest.Mo
 
     assert result.steps_executed == 1
     assert result.stopped_reason == "max_wall_clock_reached"
+
+
+def test_autonomy_persists_session_memory_and_replay_keeps_verifier_guards(
+    tmp_path: Path,
+) -> None:
+    runtime = OpenClawRuntime.from_manifest(
+        manifest_path=_manifest_path(),
+        ledger_path=tmp_path / "ledger.jsonl",
+        sandbox_root=tmp_path / "sandbox",
+    )
+    runner = AutonomousSessionRunner(runtime)
+    blocked_step = AutonomousStep(
+        user_intent="Attempt privileged action without consent.",
+        candidates=(
+            AutonomousCandidatePlan(
+                proposal_text="Send privileged message.",
+                action_class="SEND_EMAIL",
+                scope="mailbox:primary",
+                effect_class=EffectClass.PRIVILEGED,
+                command=("echo", "blocked"),
+                trajectory_reference="replay/blocked",
+            ),
+        ),
+    )
+
+    first = runner.run(
+        goal_text="Replay guard test run 1.",
+        steps=(blocked_step,),
+        policy=AutonomousPolicy(max_steps=3, stop_on_reject=True),
+    )
+    second = runner.run(
+        goal_text="Replay guard test run 2.",
+        steps=(blocked_step,),
+        policy=AutonomousPolicy(max_steps=3, stop_on_reject=True),
+    )
+
+    assert first.step_results[0].cycle_result.verification.allowed is False
+    assert first.step_results[0].cycle_result.verification.reason == "consent_required"
+    assert second.step_results[0].cycle_result.verification.allowed is False
+    assert second.step_results[0].cycle_result.verification.reason == "consent_required"
+    assert second.step_results[0].cycle_result.commit_token is None
+    assert first.memory_path.exists()
+    assert second.memory_path == first.memory_path
+
+    entries = runner.memory.read_all()
+    session_started = [entry for entry in entries if entry.get("event") == "session_started"]
+    step_records = [entry for entry in entries if entry.get("event") == "step_recorded"]
+    assert len(session_started) >= 2
+    assert len(step_records) >= 2

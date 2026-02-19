@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from ree_openclaw.agent.memory import AutonomousSessionMemoryStore, SessionMemorySummary
 from ree_openclaw.rc.scoring import RCConflictSignals
 from ree_openclaw.rollout.planner import RolloutProposal, RolloutSignals
 from ree_openclaw.runtime.pipeline import OpenClawRuntime, ProposalCycleResult
@@ -44,14 +45,18 @@ class AutonomousStepResult:
     step_index: int
     selected_trajectory_reference: str
     selected_ranking_score: float
+    memory_bias_applied: float
     cycle_result: ProposalCycleResult
 
 
 @dataclass(frozen=True)
 class AutonomousSessionResult:
+    session_id: str
     goal_text: str
     step_results: tuple[AutonomousStepResult, ...]
     stopped_reason: str
+    memory_path: Path
+    memory_summary: SessionMemorySummary
 
     @property
     def steps_executed(self) -> int:
@@ -59,8 +64,15 @@ class AutonomousSessionResult:
 
 
 class AutonomousSessionRunner:
-    def __init__(self, runtime: OpenClawRuntime) -> None:
+    def __init__(
+        self,
+        runtime: OpenClawRuntime,
+        *,
+        memory_store: AutonomousSessionMemoryStore | None = None,
+    ) -> None:
         self.runtime = runtime
+        default_memory_path = runtime.ledger.path.parent / "autonomy" / "session_memory.jsonl"
+        self.memory = memory_store or AutonomousSessionMemoryStore(default_memory_path)
 
     def run(
         self,
@@ -75,6 +87,15 @@ class AutonomousSessionRunner:
         limit = min(active_policy.max_steps, len(steps))
         command_count = 0
         start_time = time.monotonic()
+        session_id = self.memory.start_session(
+            goal_text=goal_text,
+            policy_snapshot={
+                "max_steps": active_policy.max_steps,
+                "max_command_count": active_policy.max_command_count,
+                "max_wall_clock_seconds": active_policy.max_wall_clock_seconds,
+                "stop_on_reject": active_policy.stop_on_reject,
+            },
+        )
 
         for step_index in range(limit):
             if (
@@ -116,7 +137,18 @@ class AutonomousSessionRunner:
                     for item in step.candidates
                 },
             )
-            selected = ranked[0]
+            ranked_with_memory = []
+            for evaluation in ranked:
+                memory_bias = self.memory.trajectory_bias(
+                    evaluation.candidate.trajectory_reference
+                )
+                ranked_with_memory.append(
+                    (evaluation.ranking_score + memory_bias, memory_bias, evaluation)
+                )
+            selected_adjusted_score, memory_bias_applied, selected = max(
+                ranked_with_memory,
+                key=lambda item: item[0],
+            )
             selected_plan = next(
                 item
                 for item in step.candidates
@@ -139,9 +171,26 @@ class AutonomousSessionRunner:
                 AutonomousStepResult(
                     step_index=step_index,
                     selected_trajectory_reference=selected_plan.trajectory_reference,
-                    selected_ranking_score=selected.ranking_score,
+                    selected_ranking_score=selected_adjusted_score,
+                    memory_bias_applied=memory_bias_applied,
                     cycle_result=cycle,
                 )
+            )
+            self.memory.append_step_record(
+                session_id=session_id,
+                step_index=step_index,
+                user_intent=step.user_intent,
+                selected_trajectory_reference=selected_plan.trajectory_reference,
+                selected_ranking_score=selected_adjusted_score,
+                memory_bias_applied=memory_bias_applied,
+                action_class=selected_plan.action_class,
+                scope=selected_plan.scope,
+                effect_class=selected_plan.effect_class.value,
+                allowed=cycle.verification.allowed,
+                reason=cycle.verification.reason,
+                rc_state=cycle.rc_state.value,
+                rc_conflict_score=cycle.rc_conflict_score,
+                commit_id=cycle.commit_token.commit_id if cycle.commit_token else None,
             )
             if not cycle.verification.allowed and active_policy.stop_on_reject:
                 stopped_reason = "rejected_step"
@@ -160,24 +209,42 @@ class AutonomousSessionRunner:
         ):
             stopped_reason = "max_steps_reached"
 
+        self.memory.finalize_session(
+            session_id=session_id,
+            stopped_reason=stopped_reason,
+            steps_executed=len(step_results),
+        )
+        memory_summary = self.memory.summarize()
+
         return AutonomousSessionResult(
+            session_id=session_id,
             goal_text=goal_text,
             step_results=tuple(step_results),
             stopped_reason=stopped_reason,
+            memory_path=self.memory.path,
+            memory_summary=memory_summary,
         )
 
     @staticmethod
     def write_artifact(result: AutonomousSessionResult, output_path: Path) -> Path:
         payload = {
+            "session_id": result.session_id,
             "goal_text": result.goal_text,
             "steps_executed": result.steps_executed,
             "stopped_reason": result.stopped_reason,
+            "memory_path": str(result.memory_path),
+            "memory_summary": {
+                "total_sessions": result.memory_summary.total_sessions,
+                "total_step_records": result.memory_summary.total_step_records,
+                "trajectory_bias": result.memory_summary.trajectory_bias,
+            },
             "generated_at": datetime.now(tz=timezone.utc).isoformat(),
             "steps": [
                 {
                     "step_index": item.step_index,
                     "selected_trajectory_reference": item.selected_trajectory_reference,
                     "selected_ranking_score": round(item.selected_ranking_score, 4),
+                    "memory_bias_applied": round(item.memory_bias_applied, 4),
                     "allowed": item.cycle_result.verification.allowed,
                     "reason": item.cycle_result.verification.reason,
                     "rc_state": item.cycle_result.rc_state.value,

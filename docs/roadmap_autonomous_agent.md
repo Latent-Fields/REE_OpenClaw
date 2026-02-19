@@ -26,6 +26,7 @@ Implemented now:
 - rollout planning/ranking interface
 - protected offline consolidation
 - bounded autonomous session demo runner
+- persistent autonomy session memory (separate from trusted stores)
 
 ## Contributor Priorities
 
@@ -43,7 +44,7 @@ Goal: make multi-step autonomy reliable and inspectable.
 Work items:
 
 1. Add per-session budget guards (token/time/tool-call limits). (Completed in prototype)
-2. Add persistent session memory separate from trusted stores.
+2. Add persistent session memory separate from trusted stores. (Completed in prototype)
 3. Add explicit retry/backoff policy for reversible actions.
 4. Add action failure classification and recovery transitions.
 
@@ -102,8 +103,8 @@ Exit criteria:
 
 ## Immediate Next Engineering Slice
 
-Proceed with Phase 1 item #2:
+Proceed with Phase 1 item #3:
 
-- add persistent session memory for autonomy runs (separate from trusted stores)
-- store per-step context and prior outcomes for later candidate construction
-- add replay test ensuring memory does not bypass verifier/commit gates
+- implement retry/backoff policy for reversible actions only
+- keep privileged/destructive retry defaults conservative (no automatic retry)
+- add tests for retry stop conditions and verifier-preserving behavior
