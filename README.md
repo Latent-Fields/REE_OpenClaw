@@ -88,6 +88,14 @@ python3 -m ree_openclaw.cli offline-consolidate
 
 Runtime state is written under `.ree_openclaw_state/` by default (ledger, sandbox root, verifier audit log, autonomy artifacts, offline summaries).
 
+Emit runtime-authority experiment packs for REE assembly ingestion:
+
+```bash
+python3 scripts/run_runtime_authority_probes.py --seeds 11,29
+python3 scripts/validate_experiment_packs.py
+python3 scripts/generate_weekly_handoff.py --output evidence/planning/weekly_handoff/latest.md
+```
+
 ## Optional Docker Path
 
 Docker is optional for sandbox parity:
@@ -108,6 +116,10 @@ This builds `sandbox/Dockerfile` and runs tests in-container.
 - `make run-autonomy-demo`: run guarded autonomy demo
 - `make offline-consolidate`: run protected offline consolidation
 - `make sandbox-test`: run containerized parity tests
+
+Evidence interface contract:
+
+- `evidence/experiments/INTERFACE_CONTRACT.md`
 
 ## Licensing
 
