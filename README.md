@@ -123,15 +123,15 @@ Evidence interface contract:
 
 ## Licensing
 
-- License: Apache-2.0 (`/Users/dgolden/Documents/GitHub/REE_OpenClaw/LICENSE`)
-- Project notice and research/safety context: `/Users/dgolden/Documents/GitHub/REE_OpenClaw/NOTICE`
+- License: Apache-2.0 (`/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/LICENSE`)
+- Project notice and research/safety context: `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/NOTICE`
 - Software is provided on an "AS IS" basis without warranties under Apache-2.0 terms.
 
 ## Citation
 
 If you use REE_OpenClaw in research or derivative systems, cite:
 
-- `/Users/dgolden/Documents/GitHub/REE_OpenClaw/CITATION.cff`
+- `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/CITATION.cff`
 
 Example BibTeX:
 
@@ -157,9 +157,9 @@ High-value contribution areas:
 
 See:
 
-- `/Users/dgolden/Documents/GitHub/REE_OpenClaw/docs/roadmap_autonomous_agent.md`
-- `/Users/dgolden/Documents/GitHub/REE_OpenClaw/docs/architecture.md`
-- `/Users/dgolden/Documents/GitHub/REE_OpenClaw/docs/milestones_m0_m5_audit.md`
+- `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/docs/roadmap_autonomous_agent.md`
+- `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/docs/architecture.md`
+- `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw/docs/milestones_m0_m5_audit.md`
 
 ## Status
 

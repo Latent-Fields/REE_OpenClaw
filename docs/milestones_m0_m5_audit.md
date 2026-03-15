@@ -1,7 +1,7 @@
 # REE_OpenClaw Milestone Audit (M0-M5)
 
 Date: 2026-02-18  
-Scope: `/Users/dgolden/Documents/GitHub/REE_OpenClaw` runtime + docs + tests
+Scope: `/Users/dgolden/Documents/GitHub/REE_Working/REE_OpenClaw` runtime + docs + tests
 
 ## M0 - Integration Skeleton
 
